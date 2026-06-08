@@ -1,0 +1,78 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Todo Tree</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;background:#0f0f23;color:#e0e0e0;min-height:100vh;display:flex;justify-content:center;padding:20px}
+.ob{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:1000;display:flex;justify-content:center;align-items:center}.ob.hide{display:none}
+.oc{background:#1a1a3e;border-radius:20px;padding:40px;max-width:500px;width:90%;text-align:center;margin:0 auto}
+.oc h2{color:#00cec9;font-size:28px;margin-bottom:8px}.oc .sub{color:#888;font-size:14px}
+.stps{margin:25px 0;text-align:left;display:flex;flex-direction:column;gap:18px}
+.st{display:flex;gap:14px;align-items:flex-start}.st .n{width:32px;height:32px;border-radius:50%;background:#00cec9;color:#000;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
+.st h4{font-size:14px;margin-bottom:2px}.st p{font-size:12px;color:#888;line-height:1.5}
+.oc button{padding:14px 40px;border:none;border-radius:10px;background:#00cec9;color:#000;font-size:16px;font-weight:700;cursor:pointer}
+.oc .sk{color:#555;font-size:12px;cursor:pointer;margin-top:12px;display:inline-block}
+.app{display:none;max-width:600px;width:100%}.app.show{display:block}
+h1{text-align:center;margin-bottom:5px}h1 span{background:linear-gradient(90deg,#00cec9,#00b894);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub2{text-align:center;color:#666;margin-bottom:15px;font-size:14px}
+.top-bar{display:flex;gap:8px;margin-bottom:15px}
+.top-bar input{flex:1;padding:12px;border:1px solid #333;border-radius:10px;background:#1a1a3e;color:#fff;font-size:14px}
+.top-bar input:focus{outline:none;border-color:#00cec9}
+.top-bar button{padding:12px 18px;border:none;border-radius:10px;background:#00cec9;color:#000;font-weight:600;cursor:pointer;font-size:14px}
+.stats{display:flex;justify-content:center;gap:20px;margin-bottom:15px;font-size:13px;color:#888}
+.stats span{color:#fff;font-weight:600}
+.tree{background:#1a1a3e;border-radius:14px;padding:15px}
+.node{padding:8px 0;border-bottom:1px solid #0f0f23}
+.node:last-child{border:none}
+.node .row{display:flex;align-items:center;gap:8px}
+.node .toggle{width:20px;text-align:center;cursor:pointer;color:#666;font-size:12px;user-select:none}
+.node .toggle:hover{color:#00cec9}
+.node .check{width:20px;height:20px;border-radius:50%;border:2px solid #333;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:.15s;flex-shrink:0}
+.node .check.done{background:#00cec9;border-color:#00cec9}
+.node .text{flex:1;font-size:14px}.node .text.done{text-decoration:line-through;color:#555}
+.node .actions{display:flex;gap:4px;opacity:0;transition:.15s}
+.node:hover .actions{opacity:1}
+.node .actions button{padding:3px 8px;border:1px solid #333;border-radius:4px;background:transparent;color:#888;cursor:pointer;font-size:10px}
+.node .actions button:hover{border-color:#00cec9;color:#00cec9}
+.node .children{margin-left:28px;border-left:2px solid #2a2a4e;padding-left:12px}
+.node .progress{font-size:11px;color:#666;margin-left:auto}
+.empty{text-align:center;color:#555;padding:30px;font-size:14px}
+</style></head><body>
+<div class="ob" id="ob"><div class="oc">
+<h2>Todo Tree</h2><p class="sub">Organize tasks with nested subtasks</p>
+<div class="stps">
+<div class="st"><div class="n">1</div><div><h4>Add a Task</h4><p>Type a task name and click Add. It appears as a top-level task in the tree.</p></div></div>
+<div class="st"><div class="n">2</div><div><h4>Add Subtasks</h4><p>Hover over a task and click the + button to add a subtask underneath it.</p></div></div>
+<div class="st"><div class="n">3</div><div><h4>Track Progress</h4><p>Click circles to mark tasks done. Collapse/expand branches with the arrow. Progress auto-calculates!</p></div></div>
+</div>
+<button onclick="start()">Open Todo Tree</button>
+<div class="sk" onclick="start()">Skip</div>
+</div></div>
+<div class="app" id="app">
+<h1><span>Todo Tree</span></h1><p class="sub2">Nested tasks with progress tracking</p>
+<div class="stats">Tasks: <span id="total">0</span> | Done: <span id="done">0</span> | Progress: <span id="pct">0%</span></div>
+<div class="top-bar"><input type="text" id="inp" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addRoot()"><button onclick="addRoot()">Add</button></div>
+<div class="tree" id="tree"></div></div>
+<script>
+var tree=JSON.parse(localStorage.getItem('tt')||'[]');var nextId=1;
+function start(){document.getElementById('ob').classList.add('hide');document.getElementById('app').classList.add('show');localStorage.setItem('tt_seen','1');render()}
+if(localStorage.getItem('tt_seen')){document.getElementById('ob').classList.add('hide');document.getElementById('app').classList.add('show')}
+function addRoot(){var v=document.getElementById('inp').value.trim();if(!v)return;tree.push({id:nextId++,text:v,done:false,open:true,children:[]});document.getElementById('inp').value='';save();render()}
+function addChild(id){var v=prompt('Subtask name:');if(!v)return;var node=findNode(id);if(node)node.children.push({id:nextId++,text:v,done:false,open:true,children:[]});save();render()}
+function findNode(id,nodes){if(!nodes)nodes=tree;for(var i=0;i<nodes.length;i++){if(nodes[i].id===id)return nodes[i];var found=findNode(id,nodes[i].children);if(found)return found}return null}
+function toggle(id){var node=findNode(id);if(node)node.done=!node.done;save();render()}
+function toggleOpen(id){var node=findNode(id);if(node)node.open=!node.open;save();render()}
+function remove(id){function removeFrom(nodes){for(var i=0;i<nodes.length;i++){if(nodes[i].id===id){nodes.splice(i,1);return true}if(removeFrom(nodes[i].children))return true}return false}removeFrom(tree);save();render()}
+function save(){localStorage.setItem('tt',JSON.stringify(tree))}
+function countAll(nodes){var t=0,d=0;nodes.forEach(function(n){t++;if(n.done)d++;var c=countAll(n.children);t+=c.total;d+=c.done});return{total:t,done:d}}
+function renderNode(n,depth){var hasChildren=n.children.length>0;
+var html='<div class="node"><div class="row">';
+html+=hasChildren?'<span class="toggle" onclick="toggleOpen('+n.id+')">'+(n.open?'\u25bc':'\u25b6')+'</span>':'<span class="toggle"></span>';
+html+='<span class="check '+(n.done?'done':'')+'" onclick="toggle('+n.id+')">'+(n.done?'\u2713':'')+'</span>';
+html+='<span class="text '+(n.done?'done':'')+'">'+n.text+'</span>';
+if(hasChildren){var c=countAll(n.children);html+='<span class="progress">'+c.done+'/'+c.total+'</span>'}
+html+='<span class="actions"><button onclick="addChild('+n.id+')">+ Sub</button><button onclick="remove('+n.id+')">\u00d7</button></span></div>';
+if(hasChildren&&n.open){html+='<div class="children">';n.children.forEach(function(c){html+=renderNode(c,depth+1)});html+='</div>'}
+html+='</div>';return html}
+function render(){var c=countAll(tree);
+document.getElementById('total').textContent=c.total;document.getElementById('done').textContent=c.done;
+document.getElementById('pct').textContent=c.total?Math.round(c.done/c.total*100)+'%':'0%';
+document.getElementById('tree').innerHTML=tree.length?tree.map(function(n){return renderNode(n,0)}).join(''):'<div class="empty">No tasks yet. Add one above!</div>'}
+render();
+</script></body></html>
